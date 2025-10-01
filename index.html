@@ -113,7 +113,7 @@
   <!-- Hero Section -->
   <section class="hero">
     <div class="container">
-      <h1>🚀 Web20 - Build Smarter. Grow Faster...</h1>
+      <h1>🚀 Web20 - Build Smarter. Grow Faster.</h1>
       <p>Your modern partner for websites, e-commerce, digital marketing, and data-driven solutions.</p>
       <a href="#contact" class="btn">Get Started Today</a>
     </div>
@@ -194,25 +194,30 @@
   </footer>
 
   <script>
-    // Smooth scroll
-    document.querySelectorAll("nav a").forEach(link => {
-      link.addEventListener("click", e => {
-        e.preventDefault();
-        document.querySelector(link.getAttribute("href")).scrollIntoView({ behavior: "smooth" });
-        // Close mobile menu after click
-        if(window.innerWidth <= 768){
-          document.getElementById("nav-links").classList.remove("active");
-        }
-      });
-    });
+  // Smooth scroll for desktop links
+  document.querySelectorAll("nav a").forEach(link => {
+    link.addEventListener("click", e => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute("href"));
+      if(target){
+        target.scrollIntoView({ behavior: "smooth" });
+      }
 
-    // Mobile menu toggle
-    const menuToggle = document.getElementById("mobile-menu");
-    const navLinks = document.getElementById("nav-links");
-    menuToggle.addEventListener("click", () => {
-      navLinks.classList.toggle("active");
+      // Close mobile menu after click on mobile
+      if(window.innerWidth <= 768){
+        document.getElementById("mobile-menu").classList.add("hidden");
+      }
     });
-  </script>
+  });
+
+  // Mobile menu toggle
+  const menuBtn = document.getElementById("menu-btn");
+  const mobileMenu = document.getElementById("mobile-menu");
+
+  menuBtn.addEventListener("click", () => {
+    mobileMenu.classList.toggle("hidden");
+  });
+</script>
+
 </body>
 </html>
-
