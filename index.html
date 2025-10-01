@@ -3,109 +3,126 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Web20 - Smarter Digital Solutions</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="assets/logo.png" type="image/png">
+  <title>Web20 - Digital Solutions</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0F172A',  // Dark Navy
+            accent: '#0284C7',   // Cyan Blue
+            highlight: '#06B6D4' // Teal Accent
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-  <!-- Header -->
-  <header class="navbar">
-    <div class="container nav-content">
-      <img src="assets/logo.png" alt="Web20 Logo" class="logo">
-      <nav>
-        <ul>
-          <li><a href="#services">Services</a></li>
-          <li><a href="#partners">Partners</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#contact" class="btn-nav">Contact</a></li>
-        </ul>
+<body class="bg-white text-gray-800 font-sans">
+
+  <!-- Navbar -->
+  <header class="bg-primary text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <!-- Logo -->
+      <div class="flex items-center space-x-2">
+        <img src="logo.png" alt="Web20 Logo" class="h-10 w-auto">
+        <span class="text-2xl font-bold">Web20</span>
+      </div>
+
+      <!-- Desktop Menu -->
+      <nav class="hidden md:flex space-x-8 font-medium">
+        <a href="#services" class="hover:text-highlight">Services</a>
+        <a href="#partners" class="hover:text-highlight">Partners</a>
+        <a href="#about" class="hover:text-highlight">About</a>
+        <a href="#contact" class="hover:text-highlight">Contact</a>
       </nav>
+
+      <!-- Mobile Menu Button -->
+      <button id="menu-btn" class="md:hidden focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" 
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+            d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden bg-primary px-6 pb-4 space-y-3">
+      <a href="#services" class="block hover:text-highlight">Services</a>
+      <a href="#partners" class="block hover:text-highlight">Partners</a>
+      <a href="#about" class="block hover:text-highlight">About</a>
+      <a href="#contact" class="block hover:text-highlight">Contact</a>
     </div>
   </header>
 
   <!-- Hero Section -->
-  <section class="hero">
-    <div class="container">
-      <h1>🚀 Web20 - Build Smarter. Grow Faster.</h1>
-      <p>Your modern partner for websites, e-commerce, digital marketing, and data-driven solutions.</p>
-      <a href="#contact" class="btn">Get Started Today</a>
-    </div>
+  <section class="bg-gradient-to-r from-primary to-accent text-white text-center py-20 px-6">
+    <h1 class="text-4xl md:text-5xl font-bold mb-4">Smart Digital Solutions for Modern Businesses</h1>
+    <p class="max-w-2xl mx-auto mb-6 text-lg">At Web20, we build websites, manage social media, and deliver data-driven strategies. Our mission is to empower your business with modern technology and creative solutions.</p>
+    <a href="#contact" class="bg-highlight text-primary px-6 py-3 rounded-lg font-semibold hover:bg-white transition">Get Started</a>
   </section>
 
   <!-- Services -->
-  <section id="services" class="section">
-    <div class="container">
-      <h2>Our Core Services</h2>
-      <div class="grid">
-        <div class="card">🌐 Website Design & Development</div>
-        <div class="card">🛒 E-Commerce Solutions</div>
-        <div class="card">📱 Social Media Management</div>
-        <div class="card">📊 Internal Tools & Web Apps</div>
-        <div class="card">📦 Inventory Management Systems</div>
+  <section id="services" class="py-20 px-6 max-w-7xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-12">Our Services</h2>
+    <div class="grid md:grid-cols-3 gap-10">
+      <div class="p-6 shadow-lg rounded-xl hover:shadow-xl transition">
+        <h3 class="text-xl font-semibold mb-3">Websites & E-Commerce</h3>
+        <p>Modern, responsive websites and online stores tailored to your business.</p>
+      </div>
+      <div class="p-6 shadow-lg rounded-xl hover:shadow-xl transition">
+        <h3 class="text-xl font-semibold mb-3">Marketing & Social Media</h3>
+        <p>Partnering with top advertisers to deliver effective campaigns and engagement.</p>
+      </div>
+      <div class="p-6 shadow-lg rounded-xl hover:shadow-xl transition">
+        <h3 class="text-xl font-semibold mb-3">Data-Driven Decisions</h3>
+        <p>Analytics and insights for smarter growth, in collaboration with data experts.</p>
       </div>
     </div>
   </section>
 
-  <!-- Partner Services -->
-  <section id="partners" class="section light">
-    <div class="container">
-      <h2>In Partnership With Experts</h2>
-      <p>We collaborate with leading professionals to bring you powerful solutions:</p>
-      <div class="grid">
-        <div class="card">📢 Marketing Campaigns</div>
-        <div class="card">🎨 Advertisement Design & Publishing</div>
-        <div class="card">🤖 Data-Driven Decision Making</div>
-      </div>
+  <!-- Partners -->
+  <section id="partners" class="bg-gray-50 py-20 px-6">
+    <h2 class="text-3xl font-bold text-center mb-12">Our Partners</h2>
+    <p class="text-center max-w-3xl mx-auto mb-10">We collaborate with top-tier data science firms, advertising agencies, and creative studios to bring comprehensive solutions for our clients.</p>
+    <div class="flex justify-center space-x-10">
+      <div class="h-12 w-32 bg-gray-300 rounded-lg"></div>
+      <div class="h-12 w-32 bg-gray-300 rounded-lg"></div>
+      <div class="h-12 w-32 bg-gray-300 rounded-lg"></div>
     </div>
   </section>
 
   <!-- About -->
-  <section id="about" class="section">
-    <div class="container">
-      <h2>About Web20</h2>
-      <p>
-        Web20 is a modern tech startup focused on making digital transformation accessible. 
-        We combine in-house expertise with trusted partnerships to deliver affordable, 
-        high-quality solutions that scale with your business.
-      </p>
-      <div class="values">
-        <div>✨ Affordable & Transparent</div>
-        <div>⚡ Fast & Reliable</div>
-        <div>💡 Innovative & Data-Driven</div>
-        <div>🤝 Customer-Centric</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Testimonials (placeholder for future) -->
-  <section class="section light">
-    <div class="container">
-      <h2>What Clients Say</h2>
-      <p>Coming soon: Success stories from businesses powered by Web20 🚀</p>
-    </div>
+  <section id="about" class="py-20 px-6 max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-12">About Us</h2>
+    <p class="text-lg text-center max-w-3xl mx-auto">Web20 is a modern startup dedicated to delivering impactful digital experiences. We care deeply about consumer satisfaction and technological excellence, ensuring every project is handled with precision and creativity. Our vision is to help businesses grow smarter, faster, and stronger in the digital age.</p>
   </section>
 
   <!-- Contact -->
-  <section id="contact" class="section contact">
-    <div class="container">
-      <h2>Get in Touch</h2>
-      <p>Let’s bring your ideas to life. Reach out to our team today!</p>
-      <p>
-        📧 hello@web20.lk <br>
-        📞 +94 XX XXX XXXX <br>
-        🌐 <a href="https://www.web20.lk">www.web20.lk</a>
-      </p>
-      <a href="mailto:hello@web20.lk" class="btn">Email Us Now</a>
-    </div>
+  <section id="contact" class="bg-primary text-white py-20 px-6">
+    <h2 class="text-3xl font-bold text-center mb-8">Get in Touch</h2>
+    <form class="max-w-2xl mx-auto space-y-6">
+      <input type="text" placeholder="Your Name" class="w-full p-4 rounded-lg text-gray-800" required>
+      <input type="email" placeholder="Your Email" class="w-full p-4 rounded-lg text-gray-800" required>
+      <textarea placeholder="Your Message" rows="5" class="w-full p-4 rounded-lg text-gray-800"></textarea>
+      <button class="bg-highlight text-primary font-semibold px-6 py-3 rounded-lg hover:bg-white transition">Send Message</button>
+    </form>
   </section>
 
   <!-- Footer -->
-  <footer>
-    <div class="container">
-      <p>© 2025 Web20. All rights reserved.</p>
-    </div>
+  <footer class="bg-primary text-gray-400 text-center py-6">
+    <p>© 2025 Web20. All Rights Reserved.</p>
   </footer>
 
-  <script src="script.js"></script>
+  <script>
+    // Mobile Menu Toggle
+    const menuBtn = document.getElementById("menu-btn");
+    const mobileMenu = document.getElementById("mobile-menu");
+    menuBtn.addEventListener("click", () => {
+      mobileMenu.classList.toggle("hidden");
+    });
+  </script>
 </body>
 </html>
