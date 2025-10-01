@@ -75,23 +75,38 @@
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <header class="navbar">
-    <div class="container nav-content">
-      <img src="assets/logo.png" alt="Web20 Logo" class="logo">
-      <div class="menu-toggle" id="mobile-menu">
-        <span></span>
-        <span></span>
-        <span></span>
+  <!-- Navbar -->
+  <header class="bg-white text-dark shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-2 flex justify-between items-center">
+      <!-- Logo -->
+      <div class="flex items-center space-x-2">
+        <img src="assets/logo.png" alt="Web20 Logo" class="h-12 w-auto">
       </div>
-      <nav>
-        <ul id="nav-links">
-          <li><a href="#services">Services</a></li>
-          <li><a href="#partners">Partners</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#contact" class="btn-nav">Contact</a></li>
-        </ul>
+
+      <!-- Desktop Menu -->
+      <nav class="hidden md:flex space-x-8 font-medium">
+        <a href="#services" class="hover:text-primary">Services</a>
+        <a href="#partners" class="hover:text-primary">Partners</a>
+        <a href="#about" class="hover:text-primary">About</a>
+        <a href="#contact" class="hover:text-primary font-semibold">Contact</a>
       </nav>
+
+      <!-- Mobile Menu Button -->
+      <button id="menu-btn" class="md:hidden focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" 
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+            d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white px-6 pb-4 space-y-3">
+      <a href="#services" class="block hover:text-primary">Services</a>
+      <a href="#partners" class="block hover:text-primary">Partners</a>
+      <a href="#about" class="block hover:text-primary">About</a>
+      <a href="#contact" class="block hover:text-primary font-semibold">Contact</a>
     </div>
   </header>
 
@@ -109,11 +124,11 @@
     <div class="container">
       <h2>Our Core Services</h2>
       <div class="grid">
-        <div class="card">🌐 Website Design & Development</div>
-        <div class="card">🛒 E-Commerce Solutions</div>
-        <div class="card">📱 Social Media Management</div>
-        <div class="card">📊 Internal Tools & Web Apps</div>
-        <div class="card">📦 Inventory Management Systems</div>
+        <div class="p-6 shadow-lg rounded-xl hover:shadow-xl transition">🌐 Website Design & Development</div>
+        <div class="p-6 shadow-lg rounded-xl hover:shadow-xl transition">🛒 E-Commerce Solutions</div>
+        <div class="p-6 shadow-lg rounded-xl hover:shadow-xl transition">📱 Social Media Management</div>
+        <div class="p-6 shadow-lg rounded-xl hover:shadow-xl transition">📊 Internal Tools & Web Apps</div>
+        <div class="p-6 shadow-lg rounded-xl hover:shadow-xl transition">📦 Inventory Management Systems</div>
       </div>
     </div>
   </section>
