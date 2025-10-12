@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Sheet Viewer (Images Fixed)</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.13/dist/tailwind.min.css" rel="stylesheet" />
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: none; padding: 8px 12px; }
+    tr:nth-child(even) { background-color: #f8fafc; }
+    img { max-width: 120px; height: auto; border-radius: 8px; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-5xl">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Google Sheet Data</h2>
+    <div id="sheet" class="overflow-x-auto"></div>
+  </div>
+
+  <script>
+    const SHEET_CSV_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vRShhcg5OTwQUXS7FB5evapuRKr7glgy2F913EPGpAISxzSXkVRzXCHIQh1Lho9wv-K0X2M4_0NyP80/pub?output=csv";
+
+    function makeImageURL(value) {
+      value = value.trim();
+
+      // 1️⃣ Handle =IMAGE("URL")
+      const imgFormula = value.match(/=image\(["'](https?:\/\/[^"']+)["']\)/i);
+      if (imgFormula) value = imgFormula[1];
+
+      // 2️⃣ Handle Google Drive links
+      const driveMatch = value.match(/https:\/\/drive\.google\.com\/file\/d\/([^/]+)\//);
+      if (driveMatch) {
+        const fileId = driveMatch[1];
+        value = `https://drive.google.com/uc?export=view&id=${fileId}`;
+      }
+
+      // 3️⃣ Check if it's a valid image URL
+      if (value.match(/^https?:\/\/.*\.(jpg|jpeg|png|gif|webp|svg)$/i) || value.includes("googleusercontent") || value.includes("drive.google.com/uc")) {
+        return value;
+      }
+
+      return null;
+    }
+
+    function renderSheet(csvText) {
+      const rows = csvText.trim().split("\n").map(r => r.split(","));
+      const table = document.createElement("table");
+
+      // Header
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+      rows[0].forEach(header => {
+        const th = document.createElement("th");
+        th.textContent = header.trim();
+        th.className = "bg-gray-200 text-gray-800 font-semibold text-left p-2";
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      // Body
+      const tbody = document.createElement("tbody");
+      rows.slice(1).forEach(r => {
+        const tr = document.createElement("tr");
+        r.forEach(c => {
+          const td = document.createElement("td");
+          let value = c.trim();
+
+          const imgURL = makeImageURL(value);
+          if (imgURL) {
+            const img = document.createElement("img");
+            img.src = imgURL;
+            td.appendChild(img);
+          } else {
+            td.textContent = value;
+          }
+
+          td.className = "p-2";
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+
+      document.getElementById("sheet").innerHTML = "";
+      document.getElementById("sheet").appendChild(table);
+    }
+
+    function fetchSheet() {
+      const url =
+        "https://api.allorigins.win/get?url=" +
+        encodeURIComponent(SHEET_CSV_URL + "&cachebuster=" + Date.now());
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          let csvText = data.contents;
+          if (csvText.startsWith("data:text/csv;base64,")) {
+            csvText = atob(csvText.split(",")[1]);
+          }
+          renderSheet(csvText);
+        })
+        .catch(err => {
+          console.error(err);
+          document.getElementById("sheet").textContent = "Failed to load data.";
+        });
+    }
+
+    fetchSheet();
+    setInterval(fetchSheet, 120000); // Refresh every 2 min
+  </script>
+</body>
+</html>
