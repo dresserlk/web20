@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sheet → Tiles (Name / Image / Price / Description)</title>
+<style>
+  :root{
+    --bg: #0f172a;
+    --card-bg: #fff;
+    --muted: #475569;
+    --accent: #0284C7;
+  }
+  body{
+    font-family: system-ui, Arial, sans-serif;
+    background: var(--bg);
+    color: #e6eef8;
+    padding: 28px;
+    margin: 0;
+  }
+  .container{ max-width:1200px; margin:0 auto; }
+  h1{ margin:0 0 14px; font-size:22px; color:#eaf6ff; }
+  .notice{ color:#cfefff; margin-bottom:12px; }
+
+  /* Grid */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap:18px;
+    margin-top:12px;
+  }
+
+  /* Tile/Card */
+  .card{
+    background: var(--card-bg);
+    color: #071126;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(2,132,199,0.12);
+    display:flex;
+    flex-direction:column;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover{ transform: translateY(-6px); box-shadow: 0 20px 48px rgba(2,132,199,0.16); }
+
+  /* Name header */
+  .card-head{
+    padding:12px 14px;
+    border-bottom: 1px solid rgba(2,132,199,0.06);
+    display:flex; align-items:center; gap:8px;
+  }
+  .name{
+    font-weight:700; font-size:15px; color:#07203a;
+  }
+
+  /* Image */
+  .img-wrap{ width:100%; background:#f1f5f9; display:block; position:relative; }
+  .thumb{
+    width:100%;
+    height:200px;
+    object-fit:cover;
+    display:block;
+  }
+
+  /* Body */
+  .card-body{
+    padding:12px 14px; display:flex; flex-direction:column; gap:8px; flex:1;
+  }
+
+  .price{
+    font-weight:700; color: #0b1220; font-size:16px;
+  }
+  .desc{
+    color:var(--muted); font-size:14px; line-height:1.4;
+    max-height: 3.6em; /* approx 3 lines */
+    overflow: hidden;
+    transition: max-height .18s ease;
+  }
+  .desc.expanded{ max-height: 200px; }
+
+  .controls{
+    display:flex; justify-content:flex-end; margin-top: auto;
+  }
+  .btn{
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font-weight:700;
+    cursor:pointer;
+    padding:6px 8px;
+    border-radius:6px;
+  }
+
+  /* small fallback when no image */
+  .placeholder{
+    width:100%;
+    height:200px;
+    display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(90deg,#eef4fb,#f8fbff);
+    color:#94a3b8;
+    font-weight:600;
+  }
+
+  @media (max-width:420px){
+    .thumb{ height:160px; }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Products — Sheet Tiles</h1>
+    <div id="notice" class="notice">Loading…</div>
+    <div id="grid" class="grid"></div>
+  </div>
+
+<script>
+/* ===== CONFIG ===== */
+const SPREADSHEET_ID = '1EVx4ZUqKdpKctQwhnbuH6s2vA9Sx3kwnFop0NQID2eI'; // replace if needed
+const GID = '0';
+
+/* ===== Helpers (same as before) ===== */
+const noticeEl = document.getElementById('notice');
+const gridEl = document.getElementById('grid');
+
+function normalizeDriveURL(url){
+  if(!url) return '';
+  if(/\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(url)) return url;
+  if(url.includes('lh3.googleusercontent.com') || url.includes('googleusercontent.com')) return url;
+  if(url.includes('drive.google.com/thumbnail?id=')) return url.includes('&sz=') ? url : url + '&sz=w1000';
+  let m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(m && m[1]) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+  m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if(m && m[1]) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+  return url;
+}
+
+function extractImgSrcFromHtml(html){
+  if(!html) return '';
+  try {
+    if(window.DOMParser){
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const img = doc.querySelector('img');
+      if(img && img.src) return img.src;
+    }
+  } catch(e){}
+  const m = html.match(/src=['"]([^'"]+)['"]/i);
+  if(m && m[1]) return m[1];
+  return '';
+}
+
+function gvizToObjects(gviz){
+  const cols = (gviz.table.cols || []).map(c => (c.label || c.id || '').trim());
+  const rows = gviz.table.rows || [];
+  return rows.map(r => {
+    const obj = {};
+    (r.c || []).forEach((cell,i)=>{
+      let v = '';
+      if(cell && cell.f && typeof cell.f === 'string' && cell.f.toLowerCase().includes('<img')){
+        const ex = extractImgSrcFromHtml(cell.f);
+        if(ex){ v = ex; obj[cols[i] || `col${i}`] = v; return; }
+      }
+      if(cell && cell.v !== null && cell.v !== undefined) v = cell.v;
+      obj[cols[i] || `col${i}`] = v;
+    });
+    return obj;
+  });
+}
+
+/* Minimal GViz JSONP receiver */
+window.google = window.google || {};
+window.google.visualization = window.google.visualization || {};
+window.google.visualization.Query = window.google.visualization.Query || {};
+window.google.visualization.Query.setResponse = function(resp){
+  try{
+    const items = gvizToObjects(resp);
+    noticeEl.textContent = `Loaded ${items.length} rows.`;
+    renderTiles(items);
+  }catch(e){
+    noticeEl.textContent = 'Parse error: ' + e;
+    console.error(e);
+  }
+};
+
+function loadGvizJsonp(){
+  if(!SPREADSHEET_ID || SPREADSHEET_ID.startsWith('REPLACE')){
+    noticeEl.textContent = '⚠️ Set SPREADSHEET_ID in the script.';
+    return;
+  }
+  const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json`;
+  const s = document.createElement('script');
+  s.src = url;
+  s.onerror = function(e){
+    noticeEl.textContent = 'Failed to load sheet. Check sharing (Anyone with link).';
+    console.error('GViz load error', e);
+  };
+  document.head.appendChild(s);
+}
+
+/* ===== Render tiles per your layout =====
+   - Name (from 'Name')
+   - Image (from 'Image')
+   - Price (from 'Price')
+   - Collapsed Description (from 'Description') */
+function renderTiles(rows){
+  gridEl.innerHTML = '';
+  if(!rows || rows.length === 0){ noticeEl.textContent = 'No data found'; return; }
+
+  // column keys detection (favor exact column names)
+  const keys = Object.keys(rows[0]);
+  const nameKey = keys.find(k => /^name$/i.test(k)) || keys.find(k => /name/i.test(k)) || keys[0];
+  const imageKey = keys.find(k => /^image$/i.test(k)) || keys.find(k => /image|img|photo|picture/i.test(k)) || null;
+  const priceKey = keys.find(k => /^price$/i.test(k)) || keys.find(k => /price|cost|amount/i.test(k)) || null;
+  const descKey = keys.find(k => /^description$/i.test(k)) || keys.find(k => /desc|description|detail|info/i.test(k)) || null;
+
+  rows.forEach((r, idx) => {
+    const card = document.createElement('article');
+    card.className = 'card';
+
+    // Header: Name
+    const head = document.createElement('div');
+    head.className = 'card-head';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'name';
+    nameEl.textContent = r[nameKey] || '';
+    head.appendChild(nameEl);
+    card.appendChild(head);
+
+    // Image area
+    const imgWrap = document.createElement('div');
+    imgWrap.className = 'img-wrap';
+    let imgSrc = '';
+    if(imageKey && r[imageKey]) imgSrc = String(r[imageKey]).trim();
+
+    // if not in Image column, try other columns
+    if(!imgSrc){
+      for(const k of keys){
+        const v = (r[k] || '').toString().trim();
+        if(!v) continue;
+        if(v.toLowerCase().includes('<img') ){
+          imgSrc = extractImgSrcFromHtml(v); if(imgSrc) break;
+        }
+        if(/https?:\/\/.+\.(png|jpe?g|gif|webp|svg)/i.test(v) || v.includes('drive.google.com') || v.includes('googleusercontent.com')){
+          imgSrc = v; break;
+        }
+      }
+    }
+
+    if(imgSrc) imgSrc = normalizeDriveURL(imgSrc);
+
+    if(imgSrc){
+      const img = document.createElement('img');
+      img.className = 'thumb';
+      img.src = imgSrc;
+      img.alt = r[nameKey] || '';
+      img.onerror = () => { img.style.display = 'none'; };
+      imgWrap.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.className = 'placeholder';
+      ph.textContent = 'No image';
+      imgWrap.appendChild(ph);
+    }
+    card.appendChild(imgWrap);
+
+    // Body: Price + Description collapsed
+    const body = document.createElement('div');
+    body.className = 'card-body';
+
+    // Price
+    const price = document.createElement('div');
+    price.className = 'price';
+    if(priceKey && r[priceKey]) price.textContent = String(r[priceKey]);
+    else price.textContent = ''; // empty if not provided
+    body.appendChild(price);
+
+    // Description collapsed
+    const desc = document.createElement('div');
+    desc.className = 'desc';
+    const fullText = (descKey && r[descKey]) ? String(r[descKey]) : '';
+    const shortText = fullText.length > 120 ? fullText.slice(0,120).trim() + '…' : fullText;
+    desc.textContent = shortText || '';
+    body.appendChild(desc);
+
+    // Controls (Show more / Show less)
+    const controls = document.createElement('div');
+    controls.className = 'controls';
+    if(fullText && fullText.length > 120){
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.type = 'button';
+      btn.textContent = 'Show more';
+      btn.addEventListener('click', () => {
+        const expanded = desc.classList.toggle('expanded');
+        if(expanded){
+          desc.textContent = fullText;
+          btn.textContent = 'Show less';
+        } else {
+          desc.textContent = shortText;
+          btn.textContent = 'Show more';
+        }
+      });
+      controls.appendChild(btn);
+    }
+    body.appendChild(controls);
+
+    card.appendChild(body);
+    gridEl.appendChild(card);
+  });
+}
+
+/* start */
+loadGvizJsonp();
+</script>
+</body>
+</html>
