@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ShopApp — PWA-ready Store</title>
+
+<!-- Link manifest (create manifest.json next) -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0284C7">
+
+<style>
+:root{
+  --bg: #0f172a;
+  --card-bg: #ffffff;
+  --muted: #475569;
+  --accent: #0284C7;
+  --text: #0b1220;
+  --accent-contrast: #ffffff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui, Arial, sans-serif;
+  background:var(--bg);
+  color:var(--accent-contrast);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  min-height:100vh;
+  padding:18px;
+}
+
+/* Header */
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+h1{margin:0;font-size:20px;color:#eaf6ff}
+#btnCart{background:var(--accent);border:none;color:white;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
+
+/* Container & Grid */
+main.container{max-width:1100px;margin:0 auto;}
+.notice{color:#cfefff;margin-bottom:12px}
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
+  gap:16px;
+}
+
+/* Card */
+.card{
+  background:var(--card-bg);
+  color:var(--text);
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 10px 24px rgba(2,132,199,0.12);
+  display:flex;
+  flex-direction:column;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.card:focus-within, .card:hover{ transform: translateY(-6px); box-shadow: 0 20px 48px rgba(2,132,199,0.16); }
+
+.card-head{padding:10px 12px;border-bottom:1px solid rgba(2,132,199,0.06); font-weight:700}
+.img-wrap{background:#f1f5f9;cursor:pointer}
+.thumb{width:100%;height:200px;object-fit:cover;display:block}
+.card-body{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.price{font-weight:700;color:#0b1220}
+.desc{color:var(--muted);font-size:13px;line-height:1.4;max-height:3.6em;overflow:hidden}
+.btn-add{background:var(--accent);border:none;color:white;padding:8px;border-radius:8px;font-weight:600;cursor:pointer;margin-top:auto}
+.placeholder{width:100%;height:200px;display:flex;align-items:center;justify-content:center;background:#e2e8f0;color:#94a3b8;font-weight:600}
+
+/* Cart panel */
+.cart-panel{
+  position:fixed;right:0;top:0;height:100vh;width:360px;max-width:92vw;
+  background:var(--card-bg);color:var(--text);box-shadow:-6px 0 36px rgba(0,0,0,0.25);
+  transform:translateX(100%);transition:transform .28s ease;z-index:1200;padding:14px;
+}
+.cart-panel.open{transform:translateX(0)}
+.cart-header{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:12px}
+.cart-items{max-height:62vh;overflow:auto;margin-bottom:10px}
+.cart-item{border-bottom:1px solid #e6eef8;padding:8px 0;display:flex;justify-content:space-between;gap:8px}
+.small-btn{background:transparent;border:1px solid #cbd5e1;padding:6px;border-radius:6px;cursor:pointer}
+
+/* Modal for image */
+.img-modal{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.88);
+  z-index:2000;visibility:hidden;opacity:0;transition:opacity .2s ease, visibility .2s;
+}
+.img-modal.open{visibility:visible;opacity:1}
+.img-modal .viewer{
+  max-width:96vw;max-height:96vh;touch-action:none; /* we'll handle gestures */
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.img-modal img{max-width:100%;max-height:100%;user-select:none;pointer-events:none;border-radius:8px;will-change:transform}
+.img-modal .close{
+  position:absolute;top:12px;right:12px;background:transparent;border:none;color:white;font-size:28px;cursor:pointer;
+}
+
+/* zoom/pan helper: overlay shows nothing extra */
+.info{color:#cfefff;margin-bottom:8px;font-size:13px}
+
+/* Accessibility focus */
+button:focus, [tabindex]:focus{outline:3px solid #7dd3fc88; outline-offset:2px}
+
+/* small screens */
+@media (max-width:480px){
+  .thumb{height:160px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ShopApp</h1>
+  <button id="btnCart" aria-label="Open shopping cart">Cart (0)</button>
+</header>
+
+<main class="container" role="main">
+  <div id="notice" class="notice">Loading products…</div>
+  <div id="grid" class="grid" aria-live="polite"></div>
+</main>
+
+<!-- Cart -->
+<aside id="cartPanel" class="cart-panel" role="dialog" aria-labelledby="cartTitle" aria-hidden="true">
+  <div class="cart-header">
+    <div id="cartTitle">Shopping Cart</div>
+    <button id="btnCloseCart" aria-label="Close cart">✕</button>
+  </div>
+  <div id="cartItems" class="cart-items"></div>
+  <div id="cartTotal" class="cart-total" style="font-weight:700;margin-bottom:10px">Rs. 0.00</div>
+  <button id="btnCheckout" class="btn-add" style="width:100%">Checkout</button>
+</aside>
+
+<!-- Image modal (full screen) -->
+<div id="imgModal" class="img-modal" role="dialog" aria-modal="true" aria-label="Image preview">
+  <div class="viewer" tabindex="0" aria-label="Zoomable image viewer">
+    <button class="close" id="btnCloseImg" aria-label="Close image">✕</button>
+    <img id="modalImg" src="" alt="">
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG ================ */
+const SPREADSHEET_ID = '1EVx4ZUqKdpKctQwhnbuH6s2vA9Sx3kwnFop0NQID2eI'; // replace with your sheet id
+const GID = '0';
+
+/* ====== Elements ====== */
+const noticeEl = document.getElementById('notice');
+const gridEl = document.getElementById('grid');
+const btnCart = document.getElementById('btnCart');
+const cartPanel = document.getElementById('cartPanel');
+const btnCloseCart = document.getElementById('btnCloseCart');
+const cartItemsEl = document.getElementById('cartItems');
+const cartTotalEl = document.getElementById('cartTotal');
+
+const imgModal = document.getElementById('imgModal');
+const modalImg = document.getElementById('modalImg');
+const viewer = imgModal.querySelector('.viewer');
+const btnCloseImg = document.getElementById('btnCloseImg');
+
+/* ===== state ===== */
+let products = []; // indexed by id (string)
+let cart = JSON.parse(localStorage.getItem('cart') || '{}'); // { id: qty }
+function saveCart(){ localStorage.setItem('cart', JSON.stringify(cart)); renderCart(); }
+
+/* ===== Utilities ===== */
+function parsePriceToNumber(priceStr){
+  if(priceStr === undefined || priceStr === null) return 0;
+  let s = String(priceStr).trim();
+  s = s.replace(/[^\d.,-]/g, '');
+  if(s.indexOf(',') !== -1 && s.indexOf('.') !== -1) s = s.replace(/,/g,'');
+  else if(s.indexOf(',') !== -1 && s.indexOf('.') === -1) s = s.replace(/,/g,'.');
+  s = s.replace(/[^0-9.\-]/g,'');
+  const n = parseFloat(s);
+  return isNaN(n)?0:n;
+}
+function formatCurrency(n){ return 'Rs. ' + Number(n||0).toFixed(2); }
+
+/* ===== CART RENDERING ===== */
+function renderCart(){
+  cartItemsEl.innerHTML = '';
+  const ids = Object.keys(cart);
+  if(ids.length === 0){
+    cartItemsEl.innerHTML = '<p>No items in cart.</p>';
+    cartTotalEl.textContent = formatCurrency(0);
+    btnCart.textContent = 'Cart (0)';
+    return;
+  }
+  let total = 0, qtySum = 0;
+  ids.forEach(id=>{
+    const qty = cart[id];
+    const p = products[id];
+    if(!p) return;
+    total += p.priceNum * qty;
+    qtySum += qty;
+
+    const row = document.createElement('div');
+    row.className = 'cart-item';
+    row.innerHTML = `
+      <div style="flex:1">
+        <div style="font-weight:600">${escapeHtml(p.name)}</div>
+        <div style="color:#475569;font-size:13px">${p.priceStr} × ${qty}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <div>
+          <button class="small-btn" data-id="${id}" data-action="dec">−</button>
+          <button class="small-btn" data-id="${id}" data-action="inc">+</button>
+        </div>
+        <button class="small-btn" data-id="${id}" data-action="rm">Remove</button>
+      </div>
+    `;
+    cartItemsEl.appendChild(row);
+  });
+  cartTotalEl.textContent = formatCurrency(total);
+  btnCart.textContent = `Cart (${qtySum})`;
+
+  // wire cart buttons
+  cartItemsEl.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', (e)=>{
+      const id = e.currentTarget.getAttribute('data-id');
+      const action = e.currentTarget.getAttribute('data-action');
+      if(action === 'inc'){ cart[id] = (cart[id]||0) + 1; saveCart(); }
+      if(action === 'dec'){ cart[id] = (cart[id]||0) - 1; if(cart[id] <= 0) delete cart[id]; saveCart(); }
+      if(action === 'rm'){ delete cart[id]; saveCart(); }
+    });
+  });
+}
+
+/* cart UI */
+btnCart.addEventListener('click', ()=> { cartPanel.classList.add('open'); cartPanel.setAttribute('aria-hidden','false'); btnCloseCart.focus(); });
+btnCloseCart.addEventListener('click', ()=> { cartPanel.classList.remove('open'); cartPanel.setAttribute('aria-hidden','true'); btnCart.focus(); });
+document.getElementById('btnCheckout').addEventListener('click', ()=>{
+  if(Object.keys(cart).length === 0){ alert('Cart is empty'); return; }
+  // Demo checkout: show summary and clear
+  let txt = 'Order summary:\n\n'; let total = 0;
+  Object.keys(cart).forEach(id=>{
+    const qty = cart[id]; const p = products[id]; if(!p) return;
+    txt += `${p.name} — ${p.priceStr} × ${qty}\n`;
+    total += p.priceNum * qty;
+  });
+  txt += `\nTotal: ${formatCurrency(total)}`;
+  if(confirm(txt + '\n\nPlace order (demo)?')){
+    cart = {}; saveCart(); alert('Order placed (demo). Integrate real checkout to complete).');
+    cartPanel.classList.remove('open');
+  }
+});
+
+/* ===== Google Sheets GViz parsing (JSONP) ===== */
+function normalizeDriveURL(url){
+  if(!url) return '';
+  if(/\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(url)) return url;
+  if(url.includes('googleusercontent.com')) return url;
+  let m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(m && m[1]) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+  m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if(m && m[1]) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+  return url;
+}
+function extractImgSrcFromHtml(html){
+  if(!html) return '';
+  try{ const p = new DOMParser(); const d = p.parseFromString(html,'text/html'); const i = d.querySelector('img'); if(i && i.src) return i.src; }catch(e){}
+  const m = html.match(/src=['"]([^'"]+)['"]/i); return m?m[1]:'';
+}
+function gvizToObjects(gviz){
+  const cols = (gviz.table.cols || []).map(c => (c.label || c.id || '').trim());
+  const rows = gviz.table.rows || [];
+  return rows.map(r => {
+    const obj = {};
+    (r.c || []).forEach((cell,i)=>{
+      let v = '';
+      if(cell && cell.f && typeof cell.f === 'string' && cell.f.toLowerCase().includes('<img')){
+        const ex = extractImgSrcFromHtml(cell.f);
+        if(ex){ v = ex; obj[cols[i]||`col${i}`]=v; return; }
+      }
+      if(cell && cell.v !== null && cell.v !== undefined) v = cell.v;
+      obj[cols[i] || `col${i}`] = v;
+    });
+    return obj;
+  });
+}
+
+/* GViz receiver required by JSONP */
+window.google = window.google || {};
+window.google.visualization = window.google.visualization || {};
+window.google.visualization.Query = window.google.visualization.Query || {};
+window.google.visualization.Query.setResponse = function(resp){
+  try{
+    const rows = gvizToObjects(resp);
+    if(!rows || rows.length === 0){ noticeEl.textContent = 'No products found'; return; }
+    buildProducts(rows);
+    renderProducts();
+    renderCart();
+  }catch(e){ console.error(e); noticeEl.textContent = 'Error parsing sheet';}
+};
+function loadGvizJsonp(){
+  if(!SPREADSHEET_ID){ noticeEl.textContent = 'Set SPREADSHEET_ID'; return; }
+  const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json`;
+  const s = document.createElement('script'); s.src = url;
+  s.onerror = ()=> { noticeEl.textContent = 'Failed to load sheet. Ensure sharing is "Anyone with link can view".'; };
+  document.head.appendChild(s);
+}
+
+/* Build products array with stable IDs */
+function buildProducts(rows){
+  products = [];
+  const keys = Object.keys(rows[0] || {});
+  const nameKey = keys.find(k => /^name$/i.test(k)) || keys.find(k => /name/i.test(k)) || keys[0];
+  const imageKey = keys.find(k => /^image$/i.test(k)) || keys.find(k => /image|img|photo|picture/i.test(k)) || null;
+  const priceKey = keys.find(k => /^price$/i.test(k)) || keys.find(k => /price|cost|amount/i.test(k)) || null;
+  const descKey = keys.find(k => /^description$/i.test(k)) || keys.find(k => /desc|description|detail|info/i.test(k)) || null;
+
+  rows.forEach((r, idx) => {
+    let image = imageKey ? (r[imageKey] || '') : '';
+    if(!image){
+      for(const k of Object.keys(r)){
+        const v = (r[k] || '').toString();
+        if(!v) continue;
+        if(v.toLowerCase().includes('<img')){ image = extractImgSrcFromHtml(v); if(image) break; }
+        if(/https?:\/\/.+\.(png|jpe?g|gif|webp|svg)/i.test(v) || v.includes('drive.google.com') || v.includes('googleusercontent.com')){ image = v; break; }
+      }
+    }
+    image = normalizeDriveURL(String(image||'').trim());
+    const priceStr = (priceKey && r[priceKey]) ? String(r[priceKey]) : '';
+    const priceNum = parsePriceToNumber(priceStr);
+    products.push({
+      id: String(idx),
+      name: String(r[nameKey] || ''),
+      priceStr: priceStr || formatCurrency(priceNum),
+      priceNum: priceNum,
+      image: image,
+      desc: String(r[descKey] || '')
+    });
+  });
+}
+
+/* Render product cards */
+function renderProducts(){
+  gridEl.innerHTML = '';
+  products.forEach(p=>{
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-head">${escapeHtml(p.name)}</div>
+      <div class="img-wrap" role="button" tabindex="0" aria-label="Open image preview">
+        ${p.image ? `<img class="thumb" src="${p.image}" alt="${escapeHtml(p.name)}">` : `<div class="placeholder">No image</div>`}
+      </div>
+      <div class="card-body">
+        <div class="price">${escapeHtml(p.priceStr)}</div>
+        <div class="desc">${escapeHtml(p.desc)}</div>
+        <button class="btn-add" data-id="${p.id}" aria-label="Add ${escapeHtml(p.name)} to cart">Add to Cart</button>
+      </div>
+    `;
+    // add listeners
+    const addBtn = card.querySelector('.btn-add');
+    addBtn.addEventListener('click', ()=> {
+      cart[p.id] = (cart[p.id] || 0) + 1;
+      saveCart();
+    });
+
+    const imgWrap = card.querySelector('.img-wrap');
+    // click or keyboard open
+    imgWrap.addEventListener('click', ()=> {
+      if(p.image) openImageModal(p.image, p.name);
+    });
+    imgWrap.addEventListener('keydown', (e)=> {
+      if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if(p.image) openImageModal(p.image, p.name); }
+    });
+
+    gridEl.appendChild(card);
+  });
+  noticeEl.textContent = `Loaded ${products.length} products.`;
+}
+
+/* small helper */
+function escapeHtml(s){
+  if(s === undefined || s === null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ===== Image modal + pinch/zoom/pan/wheel handling ===== */
+
+/* transform state */
+let scale = 1;
+let minScale = 1;
+let maxScale = 6;
+let originX = 0; // translation
+let originY = 0;
+let startX = 0;
+let startY = 0;
+let isPanning = false;
+
+/* pointer tracking for pinch */
+let pointers = new Map();
+let initialDist = 0;
+let initialScale = 1;
+let initialMid = {x:0,y:0};
+let doubleTapTimer = 0;
+let lastTap = 0;
+
+function openImageModal(src, alt){
+  modalImg.src = src;
+  modalImg.alt = alt || 'Product image';
+  // reset transforms
+  scale = 1; originX = 0; originY = 0;
+  applyTransform();
+  imgModal.classList.add('open');
+  imgModal.setAttribute('aria-hidden','false');
+  viewer.focus();
+}
+
+/* pointer events on viewer for gestures */
+viewer.addEventListener('pointerdown', (ev)=>{
+  viewer.setPointerCapture(ev.pointerId);
+  pointers.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  if(pointers.size === 1){
+    // single pointer start
+    startX = ev.clientX - originX;
+    startY = ev.clientY - originY;
+    isPanning = true;
+  } else if(pointers.size === 2){
+    // pinch start
+    const pts = Array.from(pointers.values());
+    initialDist = distance(pts[0], pts[1]);
+    initialScale = scale;
+    initialMid = midpoint(pts[0], pts[1]);
+  }
+});
+
+viewer.addEventListener('pointermove', (ev)=>{
+  if(!pointers.has(ev.pointerId)) return;
+  pointers.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+  if(pointers.size === 1 && isPanning){
+    const p = pointers.values().next().value;
+    // move (pan) when scale > 1
+    if(scale > 1){
+      originX = p.x - startX;
+      originY = p.y - startY;
+      limitPan();
+      applyTransform();
+    }
+  } else if(pointers.size === 2){
+    const pts = Array.from(pointers.values());
+    const newDist = distance(pts[0], pts[1]);
+    if(initialDist === 0) return;
+    let newScale = initialScale * (newDist / initialDist);
+    newScale = Math.max(minScale, Math.min(maxScale, newScale));
+    // compute midpoint-based zoom centering
+    const mid = midpoint(pts[0], pts[1]);
+    // adjust origin so the image zooms toward the midpoint
+    // compute delta of mid relative to current translation
+    const dx = mid.x - originX;
+    const dy = mid.y - originY;
+    // ratio change
+    const ratio = newScale / scale;
+    // change origin so content under midpoint remains under midpoint
+    originX = originX - (dx * (ratio - 1));
+    originY = originY - (dy * (ratio - 1));
+    scale = newScale;
+    limitPan();
+    applyTransform();
+  }
+});
+
+viewer.addEventListener('pointerup', (ev)=>{
+  viewer.releasePointerCapture(ev.pointerId);
+  pointers.delete(ev.pointerId);
+  if(pointers.size === 0) isPanning = false;
+});
+
+viewer.addEventListener('pointercancel', (ev)=>{
+  pointers.delete(ev.pointerId);
+  isPanning = false;
+});
+
+/* wheel to zoom */
+viewer.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  const delta = -e.deltaY;
+  const zoomFactor = delta > 0 ? 1.12 : 1/1.12;
+  // compute mouse position relative to viewport and adjust origin to zoom towards pointer
+  const rect = viewer.getBoundingClientRect();
+  const mx = e.clientX;
+  const my = e.clientY;
+  const offsetX = mx - originX;
+  const offsetY = my - originY;
+  const newScale = Math.max(minScale, Math.min(maxScale, scale * zoomFactor));
+  const ratio = newScale / scale;
+  originX = originX - (offsetX * (ratio - 1));
+  originY = originY - (offsetY * (ratio - 1));
+  scale = newScale;
+  limitPan();
+  applyTransform();
+}, {passive:false});
+
+/* double-tap / double-click to zoom toggle */
+viewer.addEventListener('dblclick', (e)=>{
+  e.preventDefault();
+  if(scale <= 1.01){
+    // zoom in to 2x centered where clicked
+    const rect = viewer.getBoundingClientRect();
+    const mx = e.clientX;
+    const my = e.clientY;
+    const offsetX = mx - originX;
+    const offsetY = my - originY;
+    const newScale = 2;
+    const ratio = newScale / scale;
+    originX = originX - (offsetX * (ratio - 1));
+    originY = originY - (offsetY * (ratio - 1));
+    scale = newScale;
+  } else {
+    // reset zoom
+    scale = 1; originX = 0; originY = 0;
+  }
+  limitPan();
+  applyTransform();
+});
+
+/* helper functions */
+function applyTransform(){
+  // set CSS transform on image
+  modalImg.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+}
+function distance(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+function midpoint(a,b){ return {x:(a.x+b.x)/2, y:(a.y+b.y)/2}; }
+
+/* ensure panning doesn't move image out of viewport too far */
+function limitPan(){
+  // compute bounds: we need sizes
+  const vw = viewer.clientWidth;
+  const vh = viewer.clientHeight;
+  const iw = modalImg.naturalWidth || modalImg.clientWidth;
+  const ih = modalImg.naturalHeight || modalImg.clientHeight;
+  // compute scaled image size using element displayed size (modalImg client size)
+  const displayW = modalImg.clientWidth * scale;
+  const displayH = modalImg.clientHeight * scale;
+  // limit originX so image edges are not too far beyond viewer
+  const maxX = Math.max(0, (displayW - viewer.clientWidth)/2 + 50); // allow small overscroll
+  const maxY = Math.max(0, (displayH - viewer.clientHeight)/2 + 50);
+  // allow panning to center; approximate constraint:
+  const minOriginX = - (displayW - 40);
+  const maxOriginX = (displayW - 40);
+  // simpler bounding: keep originX/Y limited proportionally
+  if(displayW <= viewer.clientWidth){
+    originX = 0;
+  } else {
+    // clamp relative to display size
+    const halfDiffX = (displayW - viewer.clientWidth)/2;
+    originX = Math.min(halfDiffX + 100, Math.max(-halfDiffX - 100, originX));
+  }
+  if(displayH <= viewer.clientHeight){
+    originY = 0;
+  } else {
+    const halfDiffY = (displayH - viewer.clientHeight)/2;
+    originY = Math.min(halfDiffY + 100, Math.max(-halfDiffY - 100, originY));
+  }
+}
+
+/* close modal */
+function closeImageModal(){
+  imgModal.classList.remove('open');
+  imgModal.setAttribute('aria-hidden','true');
+  modalImg.src = ''; // free memory
+  // return focus to last focused element (simple: cart button)
+  btnCart.focus();
+}
+
+/* close by clicking backdrop or close button or ESC */
+btnCloseImg.addEventListener('click', closeImageModal);
+imgModal.addEventListener('click', (e)=>{ if(e.target === imgModal) closeImageModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') { if(imgModal.classList.contains('open')) closeImageModal(); } });
+
+/* ===== simple initialization & app shell features ===== */
+
+/* register service worker for PWA (must be served over HTTPS or localhost) */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('service-worker.js').then((reg)=> {
+    console.log('Service worker registered', reg);
+  }).catch(err => console.warn('SW register failed', err));
+}
+
+/* load the sheet */
+loadGvizJsonp();
+
+/* initial render if cart persisted */
+renderCart();
+
+/* helper escapeHtml already defined earlier via escapeHtml function */
+
+/* small utility to open image modal from product click (exposed) */
+function openImageModal(src, name){ openImageModal(src, name); }
+
+// expose to global for debugging (optional)
+window._shopapp = { products, cart };
+
+</script>
+</body>
+</html>
