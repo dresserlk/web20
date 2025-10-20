@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Simple E-Commerce (Google Sheet Backend) — Fixed Cart</title>
+<style>
+  :root{
+    --bg: #0f172a;
+    --card-bg: #fff;
+    --muted: #475569;
+    --accent: #0284C7;
+    --cart-bg: #ffffff;
+  }
+  body{
+    font-family: system-ui, Arial, sans-serif;
+    background: var(--bg);
+    color: #e6eef8;
+    margin:0;
+    padding:0;
+  }
+
+  header{
+    background: #0f172a;
+    color: white;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding: 16px 28px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.2);
+  }
+  header h1{
+    font-size:20px;
+    margin:0;
+  }
+  header button{
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding:8px 14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+
+  .container{ max-width:1200px; margin:0 auto; padding:28px; }
+  #notice{ color:#cfefff; margin-bottom:12px; }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap:18px;
+  }
+
+  /* Product Card */
+  .card{
+    background: var(--card-bg);
+    color: #071126;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(2,132,199,0.12);
+    display:flex;
+    flex-direction:column;
+    transition: transform .18s ease, box-shadow .18s ease;
+  }
+  .card:hover{ transform: translateY(-6px); box-shadow: 0 20px 48px rgba(2,132,199,0.16); }
+
+  .img-wrap{ width:100%; background:#f1f5f9; display:block; position:relative; }
+  .thumb{ width:100%; height:200px; object-fit:cover; display:block; }
+
+  .card-body{
+    padding:14px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex:1;
+  }
+  .name{ font-weight:700; font-size:16px; color:#07203a; }
+  .price{ font-weight:700; color:#0284C7; font-size:15px; }
+  .desc{ color:var(--muted); font-size:13px; line-height:1.4; max-height:3.6em; overflow:hidden; }
+  .btn-add{
+    background: var(--accent);
+    color: white;
+    border:none;
+    border-radius:8px;
+    padding:8px;
+    font-weight:600;
+    cursor:pointer;
+    transition: background .2s;
+    margin-top:8px;
+  }
+  .btn-add:hover{ background:#0369a1; }
+
+  .placeholder{
+    width:100%; height:200px;
+    display:flex; align-items:center; justify-content:center;
+    background: #e2e8f0; color:#94a3b8; font-weight:600;
+  }
+
+  /* Cart Panel */
+  .cart-panel{
+    position:fixed;
+    top:0; right:-380px;
+    width:340px;
+    height:100vh;
+    background: var(--cart-bg);
+    box-shadow: -4px 0 20px rgba(0,0,0,0.25);
+    transition:right .3s ease;
+    display:flex;
+    flex-direction:column;
+    z-index:999;
+  }
+  .cart-panel.open{ right:0; }
+  .cart-header{
+    background: var(--accent);
+    color:white;
+    padding:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .cart-items{ flex:1; overflow-y:auto; padding:16px; color:#0f172a; }
+  .cart-item{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:10px;
+    border-bottom:1px solid #e2e8f0;
+    padding-bottom:8px;
+  }
+  .cart-item .left{
+    max-width:160px;
+  }
+  .cart-item-name{ font-weight:600; font-size:14px; }
+  .cart-item-controls{
+    display:flex; align-items:center; gap:6px;
+  }
+  .small-btn{
+    background:transparent;
+    border:1px solid #ccc;
+    padding:4px 8px;
+    border-radius:6px;
+    cursor:pointer;
+  }
+  .cart-footer{
+    padding:16px;
+    border-top:1px solid #e2e8f0;
+  }
+  .cart-total{
+    font-weight:700;
+    margin-bottom:8px;
+  }
+  .btn-checkout{
+    width:100%;
+    background: var(--accent);
+    color:white;
+    border:none;
+    padding:10px;
+    border-radius:8px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  @media (max-width:480px){
+    .thumb{ height:160px; }
+    .cart-panel{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🛒 My E-Commerce Store</h1>
+  <button id="btnCart">Cart (0)</button>
+</header>
+
+<div class="container">
+  <div id="notice">Loading products…</div>
+  <div id="grid" class="grid"></div>
+</div>
+
+<!-- Cart Sidebar -->
+<div id="cartPanel" class="cart-panel" aria-hidden="true">
+  <div class="cart-header">
+    <h2>Shopping Cart</h2>
+    <button id="btnCloseCart" style="background:none;border:none;color:white;font-size:18px;cursor:pointer;">✕</button>
+  </div>
+  <div id="cartItems" class="cart-items"></div>
+  <div class="cart-footer">
+    <div id="cartTotal" class="cart-total">Total: Rs. 0.00</div>
+    <button id="btnCheckout" class="btn-checkout">Checkout</button>
+  </div>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
+const SPREADSHEET_ID = '1EVx4ZUqKdpKctQwhnbuH6s2vA9Sx3kwnFop0NQID2eI'; // replace your sheet id if needed
+const GID = '0';
+
+const noticeEl = document.getElementById('notice');
+const gridEl = document.getElementById('grid');
+const cartPanel = document.getElementById('cartPanel');
+const btnCart = document.getElementById('btnCart');
+const btnCloseCart = document.getElementById('btnCloseCart');
+const cartItemsEl = document.getElementById('cartItems');
+const cartTotalEl = document.getElementById('cartTotal');
+const btnCheckout = document.getElementById('btnCheckout');
+
+/* ===== State ===== */
+let products = []; // array of product objects {id, name, priceStr, priceNum, image, desc}
+let cart = JSON.parse(localStorage.getItem('cart') || '{}'); // { "<id>": qty, ... }
+
+/* ===== Utilities ===== */
+function parsePriceToNumber(priceStr){
+  if(priceStr === undefined || priceStr === null) return 0;
+  // remove currency names/symbols, keep digits and dot
+  // replace comma thousands separators (e.g. "1,234.50" -> "1234.50")
+  let s = String(priceStr).trim();
+  // remove currency symbols and letters except digits, dot and comma
+  s = s.replace(/[^\d.,-]/g, '');
+  // if both comma and dot present assume dot is decimal separator and remove commas
+  if(s.indexOf(',') !== -1 && s.indexOf('.') !== -1){
+    s = s.replace(/,/g, '');
+  } else if(s.indexOf(',') !== -1 && s.indexOf('.') === -1){
+    // only comma present -> treat comma as decimal separator (e.g., "123,45")
+    s = s.replace(/,/g, '.');
+  }
+  // remove any remaining non-digit/period
+  s = s.replace(/[^0-9.\-]/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function formatCurrency(num){
+  return 'Rs. ' + Number(num || 0).toFixed(2);
+}
+
+/* ===== Cart functions ===== */
+function saveCart(){
+  localStorage.setItem('cart', JSON.stringify(cart));
+  renderCart();
+}
+
+function addToCartById(id){
+  id = String(id);
+  if(!cart[id]) cart[id] = 0;
+  cart[id] = cart[id] + 1;
+  saveCart();
+  openCartPanel();
+}
+
+function reduceFromCartById(id){
+  id = String(id);
+  if(!cart[id]) return;
+  cart[id] = cart[id] - 1;
+  if(cart[id] <= 0) delete cart[id];
+  saveCart();
+}
+
+function removeItemCompletely(id){
+  id = String(id);
+  if(cart[id]) delete cart[id];
+  saveCart();
+}
+
+/* ===== Render cart ===== */
+function renderCart(){
+  cartItemsEl.innerHTML = '';
+  const ids = Object.keys(cart);
+  if(ids.length === 0){
+    cartItemsEl.innerHTML = '<p>No items in cart.</p>';
+    cartTotalEl.textContent = formatCurrency(0);
+    btnCart.textContent = 'Cart (0)';
+    return;
+  }
+  let total = 0;
+  let totalQty = 0;
+  ids.forEach(id => {
+    const qty = cart[id];
+    const product = products[id];
+    if(!product) return; // product may be undefined if sheet changed
+    const lineTotal = product.priceNum * qty;
+    total += lineTotal;
+    totalQty += qty;
+
+    const item = document.createElement('div');
+    item.className = 'cart-item';
+
+    const left = document.createElement('div');
+    left.className = 'left';
+    const title = document.createElement('div');
+    title.className = 'cart-item-name';
+    title.textContent = product.name;
+    const meta = document.createElement('div');
+    meta.style.color = '#334155';
+    meta.style.fontSize = '13px';
+    meta.textContent = product.priceStr + ' × ' + qty + ' = ' + formatCurrency(lineTotal);
+    left.appendChild(title);
+    left.appendChild(meta);
+
+    const controls = document.createElement('div');
+    controls.className = 'cart-item-controls';
+
+    const btnMinus = document.createElement('button');
+    btnMinus.className = 'small-btn';
+    btnMinus.textContent = '−';
+    btnMinus.addEventListener('click', ()=> reduceFromCartById(id));
+
+    const qtySpan = document.createElement('span');
+    qtySpan.textContent = qty;
+    qtySpan.style.minWidth = '20px';
+    qtySpan.style.textAlign = 'center';
+
+    const btnPlus = document.createElement('button');
+    btnPlus.className = 'small-btn';
+    btnPlus.textContent = '+';
+    btnPlus.addEventListener('click', ()=> addToCartById(id));
+
+    const btnRemove = document.createElement('button');
+    btnRemove.className = 'small-btn';
+    btnRemove.textContent = 'Remove';
+    btnRemove.addEventListener('click', ()=> removeItemCompletely(id));
+
+    controls.appendChild(btnMinus);
+    controls.appendChild(qtySpan);
+    controls.appendChild(btnPlus);
+    controls.appendChild(btnRemove);
+
+    item.appendChild(left);
+    item.appendChild(controls);
+
+    cartItemsEl.appendChild(item);
+  });
+
+  cartTotalEl.textContent = 'Total: ' + formatCurrency(total);
+  btnCart.textContent = 'Cart (' + totalQty + ')';
+}
+
+/* ===== Cart panel open/close helpers ===== */
+function openCartPanel(){
+  cartPanel.classList.add('open');
+  cartPanel.setAttribute('aria-hidden','false');
+}
+function closeCartPanel(){
+  cartPanel.classList.remove('open');
+  cartPanel.setAttribute('aria-hidden','true');
+}
+
+/* ===== Google Sheets GViz parsing ===== */
+function normalizeDriveURL(url){
+  if(!url) return '';
+  if(/\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(url)) return url;
+  if(url.includes('googleusercontent.com')) return url;
+  if(url.includes('drive.google.com/thumbnail?id=')) return url.includes('&sz=') ? url : url + '&sz=w1000';
+  let m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if(m && m[1]) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+  m = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  if(m && m[1]) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w1000`;
+  return url;
+}
+
+function extractImgSrcFromHtml(html){
+  if(!html) return '';
+  try {
+    if(window.DOMParser){
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const img = doc.querySelector('img');
+      if(img && img.src) return img.src;
+    }
+  } catch(e){}
+  const m = html.match(/src=['"]([^'"]+)['"]/i);
+  if(m && m[1]) return m[1];
+  return '';
+}
+
+function gvizToObjects(gviz){
+  const cols = (gviz.table.cols || []).map(c => (c.label || c.id || '').trim());
+  const rows = gviz.table.rows || [];
+  return rows.map(r => {
+    const obj = {};
+    (r.c || []).forEach((cell,i)=>{
+      let v = '';
+      if(cell && cell.f && typeof cell.f === 'string' && cell.f.toLowerCase().includes('<img')){
+        const ex = extractImgSrcFromHtml(cell.f);
+        if(ex){ v = ex; obj[cols[i] || `col${i}`] = v; return; }
+      }
+      if(cell && (cell.v !== null && cell.v !== undefined)) v = cell.v;
+      obj[cols[i] || `col${i}`] = v;
+    });
+    return obj;
+  });
+}
+
+/* GViz JSONP receiver */
+window.google = window.google || {};
+window.google.visualization = window.google.visualization || {};
+window.google.visualization.Query = window.google.visualization.Query || {};
+window.google.visualization.Query.setResponse = function(resp){
+  try{
+    const items = gvizToObjects(resp);
+    if(!items || items.length === 0){
+      noticeEl.textContent = 'No products found in sheet.';
+      return;
+    }
+    noticeEl.textContent = '';
+    buildProductsFromRows(items);
+    renderProductsGrid();
+    renderCart(); // show persisted cart (if any)
+  }catch(e){
+    console.error(e);
+    noticeEl.textContent = 'Error parsing sheet data.';
+  }
+};
+
+function loadGvizJsonp(){
+  if(!SPREADSHEET_ID || SPREADSHEET_ID.startsWith('REPLACE')){
+    noticeEl.textContent = '⚠️ Set SPREADSHEET_ID in the script.';
+    return;
+  }
+  const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?gid=${GID}&tqx=out:json`;
+  const s = document.createElement('script');
+  s.src = url;
+  s.onerror = function(e){
+    noticeEl.textContent = 'Failed to load sheet. Check sharing (Anyone with link).';
+    console.error('GViz load error', e);
+  };
+  document.head.appendChild(s);
+}
+
+/* ===== Convert rows -> products[] with stable ID (string index) ===== */
+function buildProductsFromRows(rows){
+  products = [];
+  const keys = Object.keys(rows[0] || {});
+  const nameKey = keys.find(k => /^name$/i.test(k)) || keys.find(k => /name/i.test(k)) || keys[0];
+  const imageKey = keys.find(k => /^image$/i.test(k)) || keys.find(k => /image|img|photo|picture/i.test(k)) || null;
+  const priceKey = keys.find(k => /^price$/i.test(k)) || keys.find(k => /price|cost|amount/i.test(k)) || null;
+  const descKey = keys.find(k => /^description$/i.test(k)) || keys.find(k => /desc|description|detail|info/i.test(k)) || null;
+
+  rows.forEach((r, idx) => {
+    const name = (r[nameKey] || '').toString();
+    let image = imageKey ? (r[imageKey] || '') : '';
+    // fallback: try to detect image url anywhere in row
+    if(!image){
+      for(const k of Object.keys(r)){
+        const v = (r[k] || '').toString();
+        if(!v) continue;
+        if(v.toLowerCase().includes('<img')){
+          image = extractImgSrcFromHtml(v);
+          if(image) break;
+        }
+        if(/https?:\/\/.+\.(png|jpe?g|gif|webp|svg)/i.test(v) || v.includes('drive.google.com') || v.includes('googleusercontent.com')){
+          image = v; break;
+        }
+      }
+    }
+    image = normalizeDriveURL(String(image || '').trim());
+    const priceStr = (priceKey && r[priceKey]) ? String(r[priceKey]) : '';
+    const priceNum = parsePriceToNumber(priceStr);
+    const desc = (descKey && r[descKey]) ? String(r[descKey]) : '';
+
+    products.push({
+      id: String(idx),
+      name: name,
+      priceStr: priceStr,
+      priceNum: priceNum,
+      image: image,
+      desc: desc
+    });
+  });
+}
+
+/* ===== Render products grid ===== */
+function renderProductsGrid(){
+  gridEl.innerHTML = '';
+  products.forEach(p => {
+    const card = document.createElement('article');
+    card.className = 'card';
+    const imgHtml = p.image ? `<img class="thumb" src="${p.image}" alt="${escapeHtml(p.name)}">` : `<div class="placeholder">No image</div>`;
+    const shortDesc = p.desc && p.desc.length > 120 ? (p.desc.slice(0,120).trim() + '…') : p.desc;
+    card.innerHTML = `
+      <div class="img-wrap">${imgHtml}</div>
+      <div class="card-body">
+        <div class="name">${escapeHtml(p.name)}</div>
+        <div class="price">${p.priceStr || formatCurrency(p.priceNum)}</div>
+        <div class="desc">${escapeHtml(shortDesc)}</div>
+        <button class="btn-add" data-id="${p.id}">Add to Cart</button>
+      </div>
+    `;
+    // attach listener
+    const btn = card.querySelector('.btn-add');
+    btn.addEventListener('click', (ev)=>{
+      const id = ev.currentTarget.getAttribute('data-id');
+      addToCartById(id);
+    });
+    gridEl.appendChild(card);
+  });
+}
+
+/* small utility to avoid XSS in inserted text */
+function escapeHtml(s){
+  if(s === undefined || s === null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+/* ===== Init / UI wiring ===== */
+btnCart.addEventListener('click', ()=> openCartPanel());
+btnCloseCart.addEventListener('click', ()=> closeCartPanel());
+btnCheckout.addEventListener('click', ()=>{
+  // simple local checkout demo — you can integrate Apps Script / API here
+  if(Object.keys(cart).length === 0){
+    alert('Cart is empty.');
+    return;
+  }
+  let summary = 'Order summary:\\n\\n';
+  let total = 0;
+  Object.keys(cart).forEach(id => {
+    const qty = cart[id];
+    const p = products[id];
+    if(!p) return;
+    summary += `${p.name} — ${p.priceStr || formatCurrency(p.priceNum)} × ${qty}\\n`;
+    total += p.priceNum * qty;
+  });
+  summary += `\\nTotal: ${formatCurrency(total)}`;
+  // for demo we just show the summary and clear cart
+  if(confirm(summary + '\\n\\nPlace order (demo)?')){
+    // clear cart after "checkout"
+    cart = {};
+    saveCart();
+    alert('Order placed (demo). Implement real checkout to send order to server/GAS.');
+    closeCartPanel();
+  }
+});
+
+/* load sheet and start */
+loadGvizJsonp();
+
+/* renderCart initially in case localStorage has items before sheet loads */
+renderCart();
+</script>
+</body>
+</html>
