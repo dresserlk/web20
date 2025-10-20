@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shopapp-cache-v1';
+const CACHE_NAME = 'shopapp-cache-v2';
 const OFFLINE_URLS = [
   './',
   './index.html',
@@ -44,3 +44,4 @@ self.addEventListener('fetch', (evt) => {
     })
   );
 });
+
