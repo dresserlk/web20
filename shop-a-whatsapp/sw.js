@@ -36,7 +36,7 @@ self.addEventListener("fetch", event => {
         return response;
       })
       .catch(() =>
-        caches.match(event.request).then(r => r || caches.match("./"))
+        caches.match(event.request).then(r => r || caches.match("/"))
       )
   );
 });
