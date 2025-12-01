@@ -1,10 +1,10 @@
 {
-  "id": "/",
+  "id": "/shop-a - Whatsapp/",
   "name": "ShopA Online Store",
   "short_name": "ShopA",
   "description": "Fast, modern, and installable PWA store for ShopA products.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/shop-a - Whatsapp/",
+  "scope": "/shop-a - Whatsapp/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0F172A",
@@ -28,3 +28,4 @@
     }
   ]
 }
+
