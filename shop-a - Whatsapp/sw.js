@@ -1,10 +1,10 @@
 const CACHE_NAME = "shopa-cache-v3";
 const OFFLINE_URLS = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png"
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png"
 ];
 
 self.addEventListener("install", event => {
@@ -36,7 +36,8 @@ self.addEventListener("fetch", event => {
         return response;
       })
       .catch(() =>
-        caches.match(event.request).then(r => r || caches.match("/"))
+        caches.match(event.request).then(r => r || caches.match("./"))
       )
   );
 });
+
