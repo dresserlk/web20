@@ -34,3 +34,18 @@ async function deleteRow(sheetId, rowIndex) {
 
   loadData();
 }
+
+async function uploadImage(folderId, dataURL, fileName) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({
+      action: "uploadImage",
+      folderId,
+      dataUrl: dataURL,
+      fileName
+    })
+  });
+
+  return res.json();
+}
+
