@@ -1,5 +1,5 @@
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbxxxxxxxxxxxxxxxxxxxxxxxxxxxx/exec";
+  "https://script.google.com/macros/s/AKfycbzIjMvgq2XHiSnU88wOKOnP3fcu5Vd2BStNiFHzXr-E3qgRARjbQezMSZwTUfNYEVm_CA/exec";
 
 async function loadData() {
   const res = await fetch(`${API_URL}?action=getStoreData`);
