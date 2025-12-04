@@ -1,88 +1,55 @@
 {
-  "id": "./",
-  "name": "StoreA - Modern Online Shopping",
-  "short_name": "StoreA",
-  "description": "Fast, modern, and beautiful online shopping experience. Browse products, add to cart, and order via WhatsApp - all installable on your device.",
-  "start_url": "./",
+  "name": "Shop Admin",
+  "short_name": "ShopAdmin",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
-  "categories": [
-    "shopping",
-    "lifestyle",
-    "business"
-  ],
-  "lang": "en",
-  "dir": "ltr",
+  "theme_color": "#667eea",
+  "description": "Modern shop administration interface",
+  "orientation": "any",
   "icons": [
     {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
+      "src": "icons/icon-72.png",
       "type": "image/png",
-      "purpose": "any"
+      "sizes": "72x72"
+    },
+    {
+      "src": "icons/icon-96.png",
+      "type": "image/png",
+      "sizes": "96x96"
+    },
+    {
+      "src": "icons/icon-128.png",
+      "type": "image/png",
+      "sizes": "128x128"
+    },
+    {
+      "src": "icons/icon-144.png",
+      "type": "image/png",
+      "sizes": "144x144"
+    },
+    {
+      "src": "icons/icon-152.png",
+      "type": "image/png",
+      "sizes": "152x152"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-384.png",
+      "type": "image/png",
+      "sizes": "384x384"
     },
     {
       "src": "icons/icon-512.png",
-      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "View Products",
-      "short_name": "Products",
-      "description": "Browse all available products",
-      "url": "./",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Shopping Cart",
-      "short_name": "Cart",
-      "description": "View your shopping cart",
-      "url": "./?cart=open",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
-  "prefer_related_applications": false,
-  "related_applications": [],
-  "share_target": {
-    "action": "./",
-    "method": "GET",
-    "enctype": "application/x-www-form-urlencoded",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  },
-  "display_override": [
-    "window-controls-overlay",
-    "standalone",
-    "minimal-ui",
-    "browser"
-  ],
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  },
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
-  "protocol_handlers": [],
-  "file_handlers": [],
-  "handle_links": "preferred"
+  ]
 }
