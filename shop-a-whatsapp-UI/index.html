@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- PWA -->
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2563eb">
 <meta name="mobile-web-app-capable" content="yes">
 <!-- PWA for iOS -->
@@ -907,6 +907,8 @@ body::-webkit-scrollbar-thumb:hover {
 
   .product-detail-right {
     padding: 24px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .detail-title {
@@ -919,6 +921,8 @@ body::-webkit-scrollbar-thumb:hover {
 
   .detail-desc {
     font-size: 15px;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .product-nav {
