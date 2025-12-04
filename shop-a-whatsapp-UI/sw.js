@@ -8,11 +8,11 @@ const IMAGE_CACHE = `${CACHE_VERSION}-images`;
 
 // Core files that need to be cached immediately
 const CORE_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.json",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
+  "./",
+  "index.html",
+  "manifest.json",
+  "icons/icon-192.png",
+  "icons/icon-512.png",
   "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
 ];
 
@@ -139,7 +139,7 @@ self.addEventListener("fetch", event => {
             return response;
           })
         )
-        .catch(() => caches.match("/"))
+        .catch(() => caches.match("./"))
     );
     return;
   }
@@ -157,7 +157,7 @@ self.addEventListener("fetch", event => {
         }
         return response;
       })
-      .catch(() => caches.match(request).then(cached => cached || caches.match("/")))
+      .catch(() => caches.match(request).then(cached => cached || caches.match("./")))
   );
 });
 
@@ -176,8 +176,8 @@ self.addEventListener("sync", event => {
 self.addEventListener("push", event => {
   const options = {
     body: event.data ? event.data.text() : "New update from StoreA!",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
+    icon: "icons/icon-192.png",
+    badge: "icons/icon-192.png",
     vibrate: [200, 100, 200],
     data: {
       dateOfArrival: Date.now(),
