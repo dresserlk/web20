@@ -6,7 +6,7 @@
   <meta name="description" content="Premium fashion and clothing for every occasion. Discover our latest collections.">
   <meta name="theme-color" content="#FFFFFF">
   <title>ShopA - Premium Fashion & Clothing</title>
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" href="/icons/icon-192.png">
   <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <style>
@@ -784,7 +784,7 @@
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
+      navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('SW registered'))
         .catch(err => console.log('SW error:', err));
     }
