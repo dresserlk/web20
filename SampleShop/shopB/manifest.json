@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "ShopA Fashion Store",
-  "short_name": "ShopA",
+  "name": "ShopB Fashion Store",
+  "short_name": "ShopB",
   "description": "Premium fashion and clothing store - Browse and shop the latest trends",
   "start_url": "/",
   "scope": "/",
@@ -27,4 +27,5 @@
       "purpose": "maskable"
     }
   ]
+
 }
