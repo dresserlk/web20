@@ -1,4 +1,4 @@
-const CACHE_NAME = "shopb-v5";
+const CACHE_NAME = "sample-shopb-v6";
 const OFFLINE_URLS = [
   "/",
   "/index.html",
@@ -67,3 +67,4 @@ self.addEventListener("fetch", event => {
   );
 
 });
+
