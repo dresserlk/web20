@@ -1,27 +1,27 @@
 {
-  "id": "/",
+  "id": "./",
   "name": "ShopB Fashion Store",
   "short_name": "ShopB",
   "description": "Premium fashion and clothing store - Browse and shop the latest trends",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#FFFFFF",
   "theme_color": "#FF1493",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "./icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "./icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/icons/maskable_icon.png",
+      "src": "./icons/maskable_icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
@@ -29,3 +29,4 @@
   ]
 
 }
+
