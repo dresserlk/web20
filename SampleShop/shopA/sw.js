@@ -1,4 +1,4 @@
-const CACHE_NAME = "shopa-v5";
+const CACHE_NAME = "sample-shopa-v6";
 const OFFLINE_URLS = [
   "/",
   "/index.html",
@@ -65,4 +65,5 @@ self.addEventListener("fetch", event => {
         });
       })
   );
+
 });
